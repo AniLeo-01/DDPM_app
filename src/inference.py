@@ -1,11 +1,11 @@
 import torch
-from src.modules import UNet
-from src.utils import extract, linear_beta_schedule
+from .modules import UNet
+from .utils import extract, linear_beta_schedule
 import torch.nn.functional as F
 from tqdm import tqdm
 from torchvision.utils import save_image
-from src.config import image_size, channels, timesteps, device
-from src.utils import sample
+from .config import image_size, channels, timesteps, device
+from .utils import sample
 
 timesteps = 1000
 betas = linear_beta_schedule(timesteps)
