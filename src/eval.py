@@ -3,9 +3,9 @@ from torchvision.transforms import Compose, ToTensor, Lambda, ToPILImage, Center
 from PIL import Image
 import requests
 import numpy as np
-from src.utils import q_sample
+from .utils import q_sample
 import torch
-from src.config import image_size, channels, timesteps, device
+from .config import image_size, channels, timesteps, device
 
 import matplotlib.pyplot as plt
 

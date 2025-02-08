@@ -2,11 +2,11 @@ from pathlib import Path
 from torch.optim import Adam
 import torch
 from tqdm import tqdm
-from src.modules import UNet
+from .modules import UNet
 from torchvision.utils import save_image
-from src.utils import p_losses, sample
-from src.dataloader import dataloader
-from src.config import *
+from .utils import p_losses, sample
+from .dataloader import dataloader
+from .config import *
 
 def num_to_groups(num, divisor):
   groups = num // divisor

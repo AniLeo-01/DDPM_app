@@ -1,7 +1,7 @@
 from datasets import load_dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from src.config import batch_size
+from .config import batch_size
 
 dataset = load_dataset("fashion_mnist")
 

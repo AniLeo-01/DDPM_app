@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from functools import partial
-from src.utils import *
+from .utils import *
 
 class SinusoidalPositionEmbeddings(nn.Module):
   def __init__(self, dim):
