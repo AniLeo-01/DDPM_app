@@ -1,0 +1,9 @@
+torch==2.6.0
+torchvision==0.21.0
+pillow==11.1.0
+torchmetrics==1.6.1
+tqdm==4.67.1
+numpy
+matplotlib
+requests==2.31.0
+datasets==2.14.5
