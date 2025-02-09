@@ -9,29 +9,29 @@ def exists(x):
   return x is not None
 
 def default(val, d):
-  if exists(val):
-    return val
-  return d() if isfunction(d) else d
+  return val if exists(val) else d() if isfunction(d) else d
 
-class Residual(nn.Module):
-  def __init__(self, fn):
-    super().__init__()
-    self.fn = fn
+def num_to_groups(num, divisor):
+  groups = num // divisor
+  remainder = num % divisor
+  arr = [divisor] * groups
+  if remainder > 0:
+      arr.append(remainder)
+  return arr
 
-  def forward(self, x, *args, **kwargs):
-    return self.fn(x, *args, **kwargs) + x
+def extract(a, t, x_shape):
+  batch_size = t.shape[0]
+  out = a.gather(-1, t.cpu())
+  return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
 
-def Upsample(dim):
-  return nn.ConvTranspose2d(dim, dim, 4, 2, 1)
-
-def Downsample(dim):
-  return nn.Conv2d(dim, dim, 4, 2, 1)
-
-def PreNorm(dim, fn):
-  return nn.Sequential(
-    nn.GroupNorm(1, dim),
-    fn
+def q_sample(x_start, t, noise=None):
+  if noise is None:
+    noise = torch.randn_like(x_start)
+  sqrt_alphas_cumprod_t = extract(sqrt_alphas_cumprod, t, x_start.shape)
+  sqrt_one_minus_alphas_cumprod_t = extract(
+    sqrt_one_minus_alphas_cumprod, t, x_start.shape
   )
+  return sqrt_alphas_cumprod_t * x_start + sqrt_one_minus_alphas_cumprod_t * noise
 
 def cosine_beta_schedule(timesteps, s=0.008):
   """
@@ -60,7 +60,6 @@ def sigmoid_beta_schedule(timesteps):
   betas = torch.linspace(-6, 6, timesteps)
   return torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
 
-#defining the beta schedule
 betas = linear_beta_schedule(timesteps)
 
 #definining the alpha schedule
@@ -75,22 +74,6 @@ sqrt_one_minus_alphas_cumprod = torch.sqrt(1.0 - alphas_cumprod)
 
 # q(x_{t-1} | x_t, x_0)
 posterior_variance = betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
-
-def q_sample(x_start, t, noise=None):
-  if noise is None:
-    noise = torch.randn_like(x_start)
-
-  sqrt_alphas_cumprod_t = extract(sqrt_alphas_cumprod, t, x_start.shape)
-  sqrt_one_minus_alphas_cumprod_t = extract(
-    sqrt_one_minus_alphas_cumprod, t, x_start.shape
-  )
-
-  return sqrt_alphas_cumprod_t * x_start + sqrt_one_minus_alphas_cumprod_t * noise
-
-def extract(a,t,x_shape):
-  batch_size = t.shape[0]
-  out = a.gather(-1, t.cpu())
-  return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
   
 def p_losses(denoise_model, x_start, t, noise=None, loss_type="l1"):
   if noise is None:
@@ -107,46 +90,70 @@ def p_losses(denoise_model, x_start, t, noise=None, loss_type="l1"):
     loss = F.smooth_l1_loss(noise, predicted_noise)
   else:
     raise NotImplementedError()
-
   return loss
 
 @torch.no_grad()
 def p_sample(model, x, t, t_index):
-    betas_t = extract(betas, t, x.shape)
-    sqrt_one_minus_alphas_cumprod_t = extract(
-        sqrt_one_minus_alphas_cumprod, t, x.shape
-    )
-    sqrt_recip_alphas_t = extract(sqrt_recip_alphas, t, x.shape)
-    
-    # Equation 11 in the paper
-    # Use our model (noise predictor) to predict the mean
-    model_mean = sqrt_recip_alphas_t * (
-        x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
-    )
+  betas_t = extract(betas, t, x.shape)
+  sqrt_one_minus_alphas_cumprod_t = extract(
+    sqrt_one_minus_alphas_cumprod, t, x.shape
+  )
+  sqrt_recip_alphas_t = extract(sqrt_recip_alphas, t, x.shape)
 
-    if t_index == 0:
-        return model_mean
-    else:
-        posterior_variance_t = extract(posterior_variance, t, x.shape)
-        noise = torch.randn_like(x)
-        # Algorithm 2 line 4:
-        return model_mean + torch.sqrt(posterior_variance_t) * noise 
+  # Equation 11 in the paper
+  # Use our model (noise predictor) to predict the mean
+  model_mean = sqrt_recip_alphas_t * (
+    x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
+  )
 
-# Algorithm 2 but save all images:
+  if t_index == 0:
+    return model_mean
+  else:
+    posterior_variance_t = extract(posterior_variance, t, x.shape)
+    noise = torch.randn_like(x)
+    # Algorithm 2 line 4:
+    return model_mean + torch.sqrt(posterior_variance_t) * noise
+
 @torch.no_grad()
-def p_sample_loop(model, shape):
-    device = next(model.parameters()).device
+def p_sample_loop(model, shape, timesteps=timesteps):
+  device = next(model.parameters()).device
+  b = shape[0]
+  img = torch.randn(shape, device=device)
 
-    b = shape[0]
-    # start from pure noise (for each example in the batch)
-    img = torch.randn(shape, device=device)
-    imgs = []
+  for i in tqdm(reversed(range(0, timesteps)), desc='sampling loop time step', total=timesteps):
+    img = p_sample(model, img, torch.full((b,), i, device=device, dtype=torch.long), i)
+
+  return img
     
-    for i in tqdm(reversed(range(0, timesteps)), desc='sampling loop time step', total=timesteps):
-        img = p_sample(model, img, torch.full((b,), i, device=device, dtype=torch.long), i)
-        imgs.append(img.cpu().numpy())
-    return imgs
+@torch.no_grad()
+def p_sample_loop_chain(model, shape, timesteps=1000):
+  """
+  Returns a 5D tensor of shape:
+  (timesteps, batch_size, channels, height, width)
+  capturing each intermediate step of diffusion.
+  """
+  device = next(model.parameters()).device
+  b = shape[0]
+  img = torch.randn(shape, device=device)
+  imgs = []  # to store each step
+
+  # We go from (timesteps-1) down to 0
+  for i in reversed(range(timesteps)):
+    t = torch.full((b,), i, device=device, dtype=torch.long)
+    img = p_sample(model, img, t, i)
+    imgs.append(img.clone())  # clone to avoid in-place ops
+
+  # Right now, imgs[0] is the final step, imgs[-1] is the first step
+  # Reverse so that imgs[0] is the 1st step, and imgs[-1] is the final step
+  imgs.reverse()
+
+  return torch.stack(imgs, dim=0)  # shape => (timesteps, batch_size, channels, H, W)
+
+@torch.no_grad()
+def sample_chain(model, image_size, batch_size=16, channels=3, timesteps=1000):
+  shape = (batch_size, channels, image_size, image_size)
+  return p_sample_loop_chain(model, shape, timesteps=timesteps)
 
 @torch.no_grad()
 def sample(model, image_size, batch_size=16, channels=3):
-    return p_sample_loop(model, shape=(batch_size, channels, image_size, image_size))
+  return p_sample_loop(model, shape=(batch_size, channels, image_size, image_size))

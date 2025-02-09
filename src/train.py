@@ -2,19 +2,11 @@ from pathlib import Path
 from torch.optim import Adam
 import torch
 from tqdm import tqdm
-from .modules import UNet
+from .model import UNet
 from torchvision.utils import save_image
-from .utils import p_losses, sample
+from .utils import p_losses, sample, num_to_groups
 from .dataloader import dataloader
 from .config import *
-
-def num_to_groups(num, divisor):
-  groups = num // divisor
-  remainder = num % divisor
-  arr = [divisor] * groups
-  if remainder > 0:
-    arr.append(remainder)
-  return arr
 
 results_folder = Path("./results")
 results_folder.mkdir(exist_ok=True)
@@ -29,7 +21,6 @@ model = UNet(
 model.to(device)
 
 optimizer = Adam(model.parameters(), lr=learning_rate)
-epochs = 6
 
 for epoch in tqdm(range(epochs), desc='Training epochs'):
   for step, batch in tqdm(enumerate(dataloader), desc=f'Epoch {epoch+1}', total=len(dataloader)):

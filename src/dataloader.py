@@ -11,13 +11,17 @@ transform = transforms.Compose([
   transforms.Lambda(lambda t: (t * 2) - 1)
 ])
 
-def transforms(samples):
-    samples['pixel_values'] = [transform(image.convert("L")) for image in samples['image']]
-    del samples['image']
-    return samples
+def transform_samples(samples):
+  samples['pixel_values'] = [transform(image.convert("L")) for image in samples['image']]
+  del samples['image']
+  return samples
 
-transformed_dataset = dataset.with_transform(transforms).remove_columns("label")
+transformed_dataset = dataset.with_transform(transform_samples).remove_columns("label")
 
-dataloader = DataLoader(transformed_dataset['train'], batch_size=batch_size, shuffle=True)
-
-
+dataloader = DataLoader(
+  transformed_dataset['train'],
+  batch_size=batch_size,
+  shuffle=True,
+  pin_memory=True,       # speed up host-to-device transfers
+  num_workers=4          # adjust based on your system
+)

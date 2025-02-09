@@ -1,5 +1,8 @@
 import torch
 
+torch.backends.cudnn.benchmark = True
+scaler = torch.amp.GradScaler("cuda", enabled=True)
+
 image_size=28
 channels=1
 timesteps=1000
