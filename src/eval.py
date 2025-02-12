@@ -3,7 +3,7 @@ from torchvision.transforms import Compose, ToTensor, Lambda, ToPILImage, Center
 from PIL import Image
 import requests
 import numpy as np
-from .utils import q_sample
+from .diffusion.utils import q_sample
 import torch
 from .config import image_size, channels, timesteps, device
 

@@ -2,7 +2,7 @@ from inspect import isfunction
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .config import timesteps
+from ..config import timesteps
 from tqdm import tqdm
 
 def exists(x):

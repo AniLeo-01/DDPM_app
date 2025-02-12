@@ -2,13 +2,13 @@ from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import torch
-from .src.model import UNet
-from .src.utils import extract, linear_beta_schedule
+from .src.diffusion.model import UNet
+from .src.diffusion.utils import extract, linear_beta_schedule
 import torch.nn.functional as F
 from tqdm import tqdm
 from torchvision.utils import save_image, make_grid
 from .src.config import image_size, channels, timesteps, device
-from .src.utils import sample, sample_chain
+from .src.diffusion.utils import sample, sample_chain
 
 model = UNet(
   dim=image_size,
