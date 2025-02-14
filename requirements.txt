@@ -7,3 +7,4 @@ numpy
 matplotlib
 requests==2.31.0
 datasets==2.14.5
+streamlit==1.42.0
