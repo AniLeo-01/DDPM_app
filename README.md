@@ -1,4 +1,4 @@
-# DDPM_app
+# Implementation of DDPM architecture for Diffusion Based Image2Image Generation
 
 DDPM_app is a comprehensive application for training and deploying Denoising Diffusion Probabilistic Models (DDPM) using Streamlit. This application allows users to train diffusion models on custom datasets and perform inference to generate images or videos based on the trained model.
 
@@ -219,5 +219,3 @@ This project is licensed under the [MIT License](LICENSE).
 - [Streamlit](https://streamlit.io/) for providing an excellent framework for building web applications.
 - [PyTorch](https://pytorch.org/) for their powerful deep learning library.
 - [Denoising Diffusion Papers and Resources](https://github.com/hojonathanho/diffusion) for inspiring the implementation of DDPM.
-
----
