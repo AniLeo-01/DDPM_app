@@ -1,6 +1,6 @@
 # Implementation of DDPM architecture for Diffusion Based Image2Image Generation
 
-DDPM_app is a comprehensive application for training and deploying Denoising Diffusion Probabilistic Models (DDPM) using Streamlit. This application allows users to train diffusion models on custom datasets and perform inference to generate images or videos based on the trained model.
+This is a comprehensive application for training and deploying Denoising Diffusion Probabilistic Models (DDPM) using Streamlit. It allows users to train diffusion models on custom datasets and perform inference to generate images or videos based on the trained model.
 
 ## Table of Contents
 
