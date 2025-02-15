@@ -2,6 +2,10 @@
 
 This is a comprehensive application for training and deploying Denoising Diffusion Probabilistic Models (DDPM) using Streamlit. It allows users to train diffusion models on custom datasets and perform inference to generate images or videos based on the trained model.
 
+**Forward Diffusion**
+
+![alt text](https://github.com/AniLeo-01/DDPM_app/blob/main/Diffusion%20Animation.gif)
+
 ## Table of Contents
 
 - [Features](#features)
